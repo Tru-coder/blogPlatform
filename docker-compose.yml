@@ -1,0 +1,74 @@
+name: blog_platform
+services:
+
+  blog_platform_backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blog_platform_backend
+    restart: unless-stopped
+    ports:
+      - "9002:8002"
+    environment:
+      - TZ=UTC
+    env_file:
+      - envs/docker_dev.env
+    depends_on:
+      - blog_platform_db
+      - blog_platform_redis
+    networks:
+      backend_network:
+        ipv4_address: 12.12.0.2
+
+  blog_platform_scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile-scheduler
+    container_name: blog_platform_scheduler
+    restart: unless-stopped
+    environment:
+      - TZ=UTC
+    env_file:
+      - envs/docker_dev.env
+    depends_on:
+      - blog_platform_db
+      - blog_platform_redis
+    networks:
+      backend_network:
+        ipv4_address: 12.12.0.5
+
+  blog_platform_db:
+    image: postgres:16.4-alpine3.20
+    container_name: db_blog_platform
+    volumes:
+      - blog_platform_db_data:/var/lib/postgresql/blog_platform
+      - ./envs/docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    env_file:
+      - envs/docker/db.env
+    restart: unless-stopped
+    networks:
+      backend_network:
+        ipv4_address: 12.12.0.3
+
+  blog_platform_redis:
+    image: redis:7.2.5-alpine
+    container_name: redis_blog_platform
+    restart: unless-stopped
+    environment:
+      - TZ=UTC
+    volumes:
+      - blog_platform_redis_data:/data
+    networks:
+      backend_network:
+        ipv4_address: 12.12.0.4
+
+volumes:
+  blog_platform_db_data:
+  blog_platform_redis_data:
+networks:
+  backend_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 12.12.0.0/16
+          gateway: 12.12.0.1
