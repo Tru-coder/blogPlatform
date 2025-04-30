@@ -80,7 +80,7 @@ class CommentRepository(DefaultRepository[Comment]):
         reactions_data = reactions_result.all()
 
         # Словарь реакций {comment_id: {reaction_type: count}}
-        reactions_dict = {}
+        reactions_dict : dict[int, dict[str, int]] = {}
         for comment_id, reaction_type, count in reactions_data:
             if comment_id not in reactions_dict:
                 reactions_dict[comment_id] = {}

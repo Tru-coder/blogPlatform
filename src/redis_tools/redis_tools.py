@@ -1,19 +1,18 @@
-from typing import Any, Callable, Awaitable, TypeVar, ParamSpec, List
+import json
+from functools import wraps
+from typing import Any, Callable, TypeVar, ParamSpec, List
 
 import redis.asyncio as redis
 from arq.connections import RedisSettings
-import json
-
-from src.domain.abstract.base_entity import BaseEntity
-from src.domain.post import Post
-from src.utils.custom_json_encoder import CustomJSONEncoder
-from functools import wraps
 
 from src.configs.settings import app_settings
+from src.domain.post import Post
 from src.logger.app_logger import AppLogger
+from src.utils.custom_json_encoder import CustomJSONEncoder
 
 F_Spec = ParamSpec("F_Spec")
 F_Return = TypeVar("F_Return")
+
 
 class RedisTools:
     __redis_client = redis.Redis(
@@ -57,15 +56,17 @@ class RedisTools:
                 await cls.set_key(cache_key, json_result, ex_in_sec=ex)
                 AppLogger.custom_logger.info(f"Redis cache set: {cache_key}, value={json_result}")
                 return result
+
             return wrapper
+
         return decorator
 
     @classmethod
     async def set_key(
-            cls, key: Any, value: Any, ex_in_sec: int = None, keep_ttl: bool = False
+            cls, key: Any, value: Any, ex_in_sec: int | None = None, keep_ttl: bool = False
     ) -> None:
         await cls.__redis_client.set(
-            key, value, ex=ex_in_sec,keepttl=keep_ttl
+            key, value, ex=ex_in_sec, keepttl=keep_ttl
         )
 
     @classmethod

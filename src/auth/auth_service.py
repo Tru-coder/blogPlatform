@@ -12,8 +12,8 @@ from src.auth.jwt_service import JWTService, RefreshToken, TokenType
 from src.auth.security_utils import SecurityUtils
 from src.database.session_manager import SessionManager
 from src.domain.app_user import AppUser
+from src.exceptions.user_exceptions import UserNotFoundException, UserPasswordIsMissingException
 from src.http_schemas.auth_schema import UserLogin
-from src.exceptions.user_exceptions import UserNotFoundException
 from src.logger.app_logger import AppLogger
 from src.repositories.user_repository import UserRepository
 
@@ -43,6 +43,7 @@ class AuthService:
                 return await func(*args, **kwargs)
             except (
                     UserNotFoundException,
+                    UserPasswordIsMissingException,
                     VerifyMismatchError,
                     VerificationError,
                     InvalidHashError,
@@ -71,10 +72,10 @@ class AuthService:
     @staticmethod
     async def generate_user_tokens(user: AppUser) -> UserTokens:
 
-        access_token_payload = {"sub": user.login}
+        access_token_payload: dict[str, Any] = {"sub": user.login}
         access_token = JWTService.generate_access_token(payload=access_token_payload)
 
-        refresh_payload = {"sub": user.login}
+        refresh_payload: dict[str, Any] = {"sub": user.login}
         refresh_token = JWTService.generate_refresh_token(payload=refresh_payload)
 
         await JWTService.save_refresh_token(
@@ -103,6 +104,9 @@ class AuthService:
         )
         if user is None:
             raise UserNotFoundException(f'Пользователь(login={request_body.login}) не найден')
+
+        if not user.password:
+            raise UserPasswordIsMissingException(f"У пользователя {user!r} не задан пароль")
 
         if SecurityUtils.check_password(
                 user=user,

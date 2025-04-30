@@ -37,7 +37,7 @@ class RefreshToken:
         # for json loads hook
         data['created_at'] = datetime.fromisoformat(data['created_at'])
         data['expired_at'] = datetime.fromisoformat(data['expired_at'])
-        return RefreshToken(**data)
+        return cls(**data)
 
 
 @enum.unique

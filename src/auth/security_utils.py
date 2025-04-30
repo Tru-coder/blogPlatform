@@ -3,6 +3,7 @@ from argon2.exceptions import VerifyMismatchError, VerificationError, InvalidHas
 
 from src.configs.settings import app_settings
 from src.domain.app_user import AppUser
+from src.exceptions.user_exceptions import UserPasswordIsMissingException
 from src.logger.app_logger import AppLogger
 
 
@@ -82,6 +83,9 @@ class SecurityUtils:
     def hash_password(cls, user: AppUser) -> str:
         # https://argon2-cffi.readthedocs.io/en/stable/argon2.html
         # https://datatracker.ietf.org/doc/html/rfc9106.html
+
+        if user.password is None:
+            raise UserPasswordIsMissingException(f'У пользователя={user!r} отсутствует пароль')
 
         return cls.ph.hash(
             cls.complicate_user_password(

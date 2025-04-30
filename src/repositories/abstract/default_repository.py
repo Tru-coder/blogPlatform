@@ -1,16 +1,17 @@
 from abc import ABC
-from typing import List, Any, Type
+from typing import List, Any, Type, TypeVar, Generic
 
 from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.domain.abstract.base_entity import BaseEntity
 from src.repositories.abstract.abstract_repository import AbstractRepository
 from src.utils.paginator import Paginator
 from src.utils.time_interval import TimeInterval
 
+T = TypeVar('T', bound='BaseEntity')
 
-class DefaultRepository[T:BaseEntity](AbstractRepository, ABC):
+
+class DefaultRepository(AbstractRepository, ABC, Generic[T]):
     entity_type = Type[T]
 
     async def find_all_with_filters_and_interval(

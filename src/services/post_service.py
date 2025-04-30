@@ -158,8 +158,10 @@ class PostService(DefaultService[Post, PostRepository]):
                                                                                            Post.author_id.key: current_user.id})
 
     @SessionManager.generate_async_transaction(session_kwarg_name="session")
-    async def get_my_posts(self, session: AsyncSession, current_user: AppUser, paginator: Paginator) -> [List[Post],
-                                                                                                         int]:
+    async def get_my_posts(
+            self, session: AsyncSession, current_user: AppUser, paginator: Paginator
+    ) -> [List[Post], int]:
+
         posts = await self.entity_repository.find_all_with_filters(
             session=session,
             filters={Post.author_id.key: current_user.id},
