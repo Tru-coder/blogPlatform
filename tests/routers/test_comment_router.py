@@ -2,7 +2,7 @@ import pytest
 from fastapi import status
 from httpx import AsyncClient
 
-from src.domain.post import PostStatus
+from src.domain.enums.enums import PostStatus
 from src.http_schemas.comment_schema import CreateCommentSchema
 from src.http_schemas.post_schemas import CreatePostSchema
 from src.services.comment_service import CommentService

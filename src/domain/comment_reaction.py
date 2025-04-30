@@ -1,5 +1,4 @@
-import enum
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Unicode, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import mapped_column, Mapped, relationship
@@ -9,21 +8,6 @@ from src.domain.abstract.base_entity import BaseEntity
 if TYPE_CHECKING:
     from src.domain.app_user import AppUser
     from src.domain.comment import Comment
-
-
-@enum.unique
-class AllowedReactionType(enum.Enum):
-    THUMB_UP = "👍"
-    THUMB_DOWN = "👎"
-
-    LIKE = "❤️"
-    JOY = "😂"
-    ANGRY = "😡"
-    CONFETTI = "🎉"
-
-    @classmethod
-    def all_values(cls) -> List[str]:
-        return [role.value for role in cls]
 
 
 class CommentReaction(BaseEntity):

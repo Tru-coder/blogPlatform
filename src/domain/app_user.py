@@ -1,31 +1,16 @@
-import enum
 from typing import TYPE_CHECKING, List
 
 from sqlalchemy import String
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.auth.permission import Permission
 from src.domain.abstract.base_entity import BaseEntity
+from src.domain.enums.enums import Role
 
 if TYPE_CHECKING:
     from src.domain.post import Post
     from src.domain.comment import Comment
     from src.domain.comment_reaction import CommentReaction
-    from src.domain.user_post_view import UserPostView
-
-@enum.unique
-class Role(enum.Enum):
-    ADMIN = Permission.admin_permissions()
-    USER = Permission.user_permissions()
-    AUTHOR = Permission.author_permissions()
-
-    def __str__(self):
-        return self.name.lower()
-
-    @classmethod
-    def all_values(cls):
-        return [role.value for role in cls]
 
 
 class AppUser(BaseEntity):

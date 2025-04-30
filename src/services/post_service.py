@@ -4,14 +4,14 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.session_manager import SessionManager
-from src.domain.app_user import AppUser, Role
-from src.domain.comment import Comment
-from src.domain.post import Post, PostFiltersUsersParams, PostFiltersParams, PostStatus
+from src.domain.app_user import AppUser
+from src.domain.enums.enums import Role, PostStatus
+from src.domain.post import Post, PostFiltersUsersParams, PostFiltersParams
 from src.domain.user_post_view import UserPostView
 from src.exceptions.post_exceptions import PostNotFoundException
 from src.http_schemas.post_schemas import CreatePostSchema, UpdatePostSchema
 from src.repositories.post_repository import PostRepository
-from src.services.comment_service import CommentService
+from src.services.comment_service import CommentService, CommentReactionsModel
 from src.services.default_service import DefaultService
 from src.services.tag_service import TagService
 from src.services.user_post_view_service import UserPostViewService
@@ -48,7 +48,13 @@ class PostService(DefaultService[Post, PostRepository]):
         )
 
     @SessionManager.generate_async_transaction(session_kwarg_name="session")
-    async def update_post(self, session: AsyncSession, request_body: UpdatePostSchema, post_uuid: UUID, current_user: AppUser) -> Post:
+    async def update_post(
+            self,
+            session: AsyncSession,
+            request_body: UpdatePostSchema,
+            post_uuid: UUID,
+            current_user: AppUser
+    ) -> Post:
         to_update_data = request_body.model_dump(exclude_unset=True)
 
         if request_body.tags:
@@ -103,14 +109,15 @@ class PostService(DefaultService[Post, PostRepository]):
             return await self.user_post_view_service.get_or_create_view_on_post(
                 session=session, post_id=post.id, user_id=current_user.id
             )
+        return None
 
     @SessionManager.generate_async_transaction(session_kwarg_name="session")
     async def get_post_with_comments(
             self, session: AsyncSession,
             post_uuid: UUID,
-                                     current_user: AppUser | None,
+            current_user: AppUser | None,
             paginator: Paginator
-    ) -> Tuple[Post, List[Comment]]:
+    ) -> Tuple[Post, List[CommentReactionsModel]]:
         post = await self.get_post_with_author_and_tags(session=session, post_uuid=post_uuid)
 
         await self.view_post(session=session, post=post, current_user=current_user)
@@ -118,7 +125,6 @@ class PostService(DefaultService[Post, PostRepository]):
         comments = await self.comment_service.get_root_comments_for_post(
             session=session, post_id=post.id, paginator=paginator
         )
-
 
         return post, comments
 
@@ -143,16 +149,17 @@ class PostService(DefaultService[Post, PostRepository]):
 
         return to_publish_posts
 
-
     @SessionManager.generate_async_transaction(session_kwarg_name="session")
     async def delete_post(self, session: AsyncSession, post_uuid: UUID, current_user: AppUser) -> None:
         if current_user.role == Role.ADMIN:
             await self.entity_repository.delete_all_data_with_filter(session=session, filters={"uuid": post_uuid})
 
-        await self.entity_repository.delete_all_data_with_filter(session=session, filters={Post.uuid.key: post_uuid, Post.author_id.key: current_user.id})
+        await self.entity_repository.delete_all_data_with_filter(session=session, filters={Post.uuid.key: post_uuid,
+                                                                                           Post.author_id.key: current_user.id})
 
     @SessionManager.generate_async_transaction(session_kwarg_name="session")
-    async def get_my_posts(self, session: AsyncSession, current_user: AppUser, paginator: Paginator) -> [List[Post], int]:
+    async def get_my_posts(self, session: AsyncSession, current_user: AppUser, paginator: Paginator) -> [List[Post],
+                                                                                                         int]:
         posts = await self.entity_repository.find_all_with_filters(
             session=session,
             filters={Post.author_id.key: current_user.id},

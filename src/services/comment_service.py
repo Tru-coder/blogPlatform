@@ -1,13 +1,15 @@
-from typing import Any, List, Tuple
+from dataclasses import dataclass
+from typing import Any, List, Tuple, Dict
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
 from src.database.session_manager import SessionManager
-from src.domain.app_user import AppUser, Role
+from src.domain.app_user import AppUser
+from src.domain.enums.enums import Role, PostStatus
 from src.domain.comment import Comment
-from src.domain.post import Post, PostStatus
+from src.domain.post import Post
 from src.exceptions.comment_exceptions import CommentNotFoundException
 from src.http_schemas.comment_schema import CreateCommentSchema, UpdateCommentSchema
 from src.repositories.comment_repository import CommentRepository
@@ -15,6 +17,10 @@ from src.services.default_service import DefaultService
 from src.services.get_post_service import GetPostService
 from src.utils.paginator import Paginator
 
+@dataclass
+class  CommentReactionsModel:
+    comment: Comment
+    reactions_count: Dict[str, int]
 
 class CommentService(DefaultService[Comment, CommentRepository]):
     entity_not_found_exception = CommentNotFoundException
@@ -84,7 +90,7 @@ class CommentService(DefaultService[Comment, CommentRepository]):
 
     async def get_root_comments_for_post(
             self, session: AsyncSession, post_id: int, paginator: Paginator
-    ) -> List[Comment]:
+    ) -> List[CommentReactionsModel]:
         comments = await self.entity_repository.find_root_comments_for_post(
             session=session, post_id=post_id, paginator=paginator
         )
@@ -95,7 +101,7 @@ class CommentService(DefaultService[Comment, CommentRepository]):
 
     @SessionManager.generate_async_transaction(session_kwarg_name='session')
     async def get_children_comments(self, session: AsyncSession, comment_uuid: UUID, paginator: Paginator)\
-            -> tuple[ List[Comment], int]:
+            -> tuple[ List[CommentReactionsModel], int]:
         parent_comment = await self.get_entity_by_uuid(session=session, entity_uuid=comment_uuid)
         comments = await self.entity_repository.find_children_comments(
             session=session, parend_comment_id=parent_comment.id, paginator=paginator
@@ -108,7 +114,7 @@ class CommentService(DefaultService[Comment, CommentRepository]):
         )
         return comments, total_count
 
-    async def set_comments_ggg_reactions(self, session: AsyncSession, comments: List[Comment]) -> List[Comment]:
+    async def set_comments_ggg_reactions(self, session: AsyncSession, comments: List[Comment]) -> List[CommentReactionsModel]:
         # Загрузка реакций для комментариев
         comment_ids = [c.id for c in comments]
 
@@ -116,10 +122,10 @@ class CommentService(DefaultService[Comment, CommentRepository]):
             session=session, comment_ids=comment_ids
         )
 
-        for comment in comments:
-            comment.reactions_count = reactions_dict.get(comment.id, {})
-
-        return comments
+        return [
+            CommentReactionsModel(comment=comment, reactions_count=reactions_dict.get(comment.id, {}))
+            for comment in comments
+        ]
 
     @SessionManager.generate_async_transaction(session_kwarg_name='session')
     async def count_comments_query(self, session: AsyncSession, filters: dict[str, Any]) -> int:
@@ -151,8 +157,10 @@ class CommentService(DefaultService[Comment, CommentRepository]):
         return comments, total_count
 
     @SessionManager.generate_async_transaction(session_kwarg_name='session')
-    async def get_comment_with_reactions(self, session: AsyncSession, comment_uuid: UUID) -> Comment:
+    async def get_comment_with_reactions(self, session: AsyncSession, comment_uuid: UUID) -> CommentReactionsModel:
         comment = await self.get_comment_with_author(session=session, comment_uuid=comment_uuid)
         reactions_count = await self.entity_repository.load_reactions_for_comments(session=session, comment_ids=[comment.id])
-        comment.reactions_count  = reactions_count.get(comment.id, {})
-        return comment
+        return CommentReactionsModel(
+            comment=comment,
+            reactions_count=reactions_count.get(comment.id, {})
+        )

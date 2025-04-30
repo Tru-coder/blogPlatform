@@ -4,7 +4,7 @@ import pytest
 from fastapi import status
 from httpx import AsyncClient
 
-from src.domain.post import PostStatus
+from src.domain.enums.enums import PostStatus
 from src.http_schemas.post_schemas import CreatePostSchema, UpdatePostSchema
 from src.http_schemas.tag_schema import CreateTagSchema
 from src.services.post_service import PostService

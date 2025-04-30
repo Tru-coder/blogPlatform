@@ -54,11 +54,16 @@ async def get_post(
         paginator: PaginatorDep,
         response: Response,
 ):
-    data = await post_service.get_post_with_comments(post_uuid=post_uuid, current_user=current_user,
-                                                     paginator=paginator)
+    data = await post_service.get_post_with_comments(
+        post_uuid=post_uuid,
+        current_user=current_user,
+        paginator=paginator
+    )
+
     comment_count = await  comment_service.count_comments_query(
         filters={Comment.post_id.key: data[0].id, Comment.parent_id.key: None, Comment.is_moderated.key: True}
     )
+
     response.headers["X-Total-Count"] = str(comment_count)
 
     return {'post': data[0], 'comments': data[1]}
@@ -86,6 +91,7 @@ async def update_post(
         )
 ):
     return await post_service.update_post(post_uuid=post_uuid, request_body=request_body, current_user=current_user)
+
 
 @post_router.delete("/{post_uuid}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_post(

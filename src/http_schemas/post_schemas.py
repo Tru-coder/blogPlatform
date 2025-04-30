@@ -3,9 +3,10 @@ from typing import Annotated, List, Self
 
 from pydantic import Field, field_validator, model_validator
 
-from src.domain.post import PostStatus, Post
+from src.domain.enums.enums import PostStatus
+from src.domain.post import Post
 from src.domain.tag import Tag
-from src.http_schemas.comment_schema import CommentPostBaseSchema
+from src.http_schemas.comment_schema import CommentReactionSchema
 from src.http_schemas.default_schemas import AppSchema, DefaultSchema
 from src.http_schemas.tag_schema import GetTagsSchema
 from src.http_schemas.user_schemas import GetUsersSchema
@@ -44,13 +45,16 @@ class GetPostsSchema(DefaultSchema, BasePostSchema):
     )]
     pass
 
+
 class GetPostSchema(GetPostsSchema):
     author: GetUsersSchema
     tags: List[GetTagsSchema]
 
+
 class GetPostCommentSchema(AppSchema):
     post: GetPostSchema
-    comments: List[CommentPostBaseSchema]
+    comments: List[CommentReactionSchema]
+
 
 class CreatePostSchema(BasePostSchema):
     tags: Annotated[List[str], Field(
@@ -70,7 +74,9 @@ class CreatePostSchema(BasePostSchema):
     @model_validator(mode='after')
     def validate_model_post_status_and_published_at(self) -> Self:
         if self.to_published_at and self.status != PostStatus.DRAFT:
-            raise ValueError(f"Отложенная публикация постов доступна только постов со статусом {PostStatus.DRAFT.value}")
+            raise ValueError(
+                f"Отложенная публикация постов доступна только постов со статусом {PostStatus.DRAFT.value}"
+            )
         return self
 
     @field_validator('to_published_at')

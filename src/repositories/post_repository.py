@@ -4,11 +4,12 @@ from uuid import UUID
 
 from sqlalchemy import select, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload, selectinload, contains_eager
+from sqlalchemy.orm import joinedload, selectinload
 
 from src.domain.comment import Comment
 from src.domain.comment_reaction import CommentReaction
-from src.domain.post import Post, PostStatus, PostFiltersParams
+from src.domain.enums.enums import PostStatus
+from src.domain.post import Post, PostFiltersParams
 from src.domain.post_tag import PostTag
 from src.redis_tools.redis_tools import RedisTools
 from src.repositories.abstract.default_repository import DefaultRepository
@@ -16,10 +17,12 @@ from src.utils.paginator import Paginator
 from src.utils.time_interval import TimeInterval
 
 
-class PostRepository(DefaultRepository):
+class PostRepository(DefaultRepository[Post]):
     entity_type = Post
 
-    async def find_post_with_tags_and_author(self, session: AsyncSession, post_uuid: UUID, author_id: int) -> Post | None:
+    async def find_post_with_tags_and_author(
+            self, session: AsyncSession, post_uuid: UUID,  author_id: int
+    ) -> Post | None:
         stmt = (
             select(self.entity_type)
             .filter(self.entity_type.uuid == post_uuid, self.entity_type.author_id == author_id)
@@ -136,8 +139,6 @@ class PostRepository(DefaultRepository):
 
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
-
-
 
     async def find_post_with_comments_3(
             self,

@@ -6,7 +6,7 @@ from fastapi import Response
 from src.configs.depends import PostServiceDep, PaginatorDep, CommentServiceDep, \
     GetCurrentUserDep, CommentReactionServiceDep, UserPostViewServiceDep
 from src.http_schemas.comment_reactions_schema import GetMyReactionsSchema
-from src.http_schemas.comment_schema import GetMyCommentSchema, CommentPostBaseSchema
+from src.http_schemas.comment_schema import GetMyCommentSchema
 from src.http_schemas.post_schemas import GetPostsSchema
 
 personal_router = APIRouter(
@@ -50,6 +50,7 @@ async def get_my_reactions(
     response.headers["X-Total-Count"] = str(data[1])
     return data[0]
 
+
 @personal_router.get("/viewed-posts", response_model=List[GetPostsSchema])
 async def get_viewed_posts(
         response: Response,
@@ -57,7 +58,6 @@ async def get_viewed_posts(
         current_user: GetCurrentUserDep,
         paginator: PaginatorDep
 ):
-
     data = await view_service.get_viewed_posts(current_user=current_user, paginator=paginator)
     response.headers["X-Total-Count"] = str(data[1])
     return data[0]

@@ -41,7 +41,7 @@ class BaseEntity(Base):
     def __repr__(self) -> str:
         return "<{0.__class__.__name__}(id={0.id!r})>".format(self)
 
-    def to_dict(self, exclude_keys: List[str] = None) -> dict[str, Any]:
+    def to_dict(self, exclude_keys: List[str] | None = None) -> dict[str, Any]:
         exclude_keys = exclude_keys or []
         return {
             attr: getattr(self, attr)

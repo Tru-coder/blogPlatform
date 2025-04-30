@@ -2,7 +2,7 @@ from typing import Annotated, Literal
 
 from pydantic import Field, EmailStr, computed_field
 
-from src.domain.app_user import Role
+from src.domain.enums.enums import Role
 from src.http_schemas.default_schemas import DefaultSchema, AppSchema
 
 class UserPasswordSchema(AppSchema):

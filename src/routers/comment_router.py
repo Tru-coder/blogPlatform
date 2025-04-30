@@ -8,9 +8,9 @@ from src.auth.permitssion_checker import PermissionChecker
 from src.configs.depends import CommentServiceDep, CommentReactionServiceDep, PaginatorDep
 from src.domain.app_user import AppUser
 from src.domain.comment import Comment
-from src.domain.comment_reaction import AllowedReactionType
+from src.domain.enums.enums import AllowedReactionType
 from src.http_schemas.comment_schema import CreateCommentSchema, GetCommentSchema, PutCommentReactionSchema, \
-    CommentPostBaseSchema, UpdateCommentSchema
+    UpdateCommentSchema, CommentReactionSchema
 
 comment_router = APIRouter(
     prefix="/comments",
@@ -50,7 +50,7 @@ async def create_comment(
     )
 
 
-@comment_router.get("/{comment_uuid}", response_model=CommentPostBaseSchema)
+@comment_router.get("/{comment_uuid}", response_model=CommentReactionSchema)
 async def get_comment(
         comment_uuid: Annotated[UUID, Path(description="UUID комментария")],
         comment_service: CommentServiceDep
@@ -58,7 +58,7 @@ async def get_comment(
     return await comment_service.get_comment_with_reactions(comment_uuid=comment_uuid)
 
 
-@comment_router.get("/{comment_uuid}/children", response_model=List[CommentPostBaseSchema])
+@comment_router.get("/{comment_uuid}/children", response_model=List[CommentReactionSchema])
 async def get_children_comments(
         response: Response,
         comment_uuid: Annotated[UUID, Path(description="UUID родительского комментария")],

@@ -11,7 +11,7 @@ from src.repositories.abstract.default_repository import DefaultRepository
 from src.utils.paginator import Paginator
 
 
-class CommentRepository(DefaultRepository):
+class CommentRepository(DefaultRepository[Comment]):
     entity_type = Comment
 
     async def find_comment_with_author(self, session: AsyncSession, comment_uuid: UUID) -> Comment | None:

@@ -2,7 +2,7 @@ from typing import Annotated, List, Dict
 
 from pydantic import Field, UUID4
 
-from src.domain.comment_reaction import AllowedReactionType
+from src.domain.enums.enums import AllowedReactionType
 from src.http_schemas.default_schemas import AppSchema, DefaultSchema
 from src.http_schemas.user_schemas import GetUsersSchema
 
@@ -38,8 +38,9 @@ class GetMyCommentSchema(DefaultSchema):
 class PutCommentReactionSchema(DefaultSchema):
     reaction_type: Annotated[str, Field(description="Реакция", examples=AllowedReactionType.all_values())]
 
-class CommentPostBaseSchema(GetCommentSchema):
+class CommentReactionSchema(AppSchema):
     reactions_count: Annotated[Dict[str, int], Field(description="Реакции на комментарий", default_factory=dict)]
+    comment: GetCommentSchema
 
 
 # Альтернативный вариант без пагинации

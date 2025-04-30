@@ -1,4 +1,3 @@
-import enum
 from datetime import datetime
 from typing import TYPE_CHECKING, List, TypedDict
 from uuid import UUID
@@ -8,22 +7,12 @@ from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.domain.abstract.base_entity import BaseEntity
+from src.domain.enums.enums import PostStatus
 
 if TYPE_CHECKING:
     from src.domain.app_user import AppUser
     from src.domain.tag import Tag
     from src.domain.comment import Comment
-
-
-@enum.unique
-class PostStatus(enum.Enum):
-    DRAFT = "черновик"
-    PUBLISHED = "опубликован"
-    ARCHIVED = "заархивирован"
-
-    @classmethod
-    def all_values(cls):
-        return [role.value for role in cls]
 
 
 class Post(BaseEntity):

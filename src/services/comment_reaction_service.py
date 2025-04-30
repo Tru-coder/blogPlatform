@@ -6,7 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.session_manager import SessionManager
 from src.domain.app_user import AppUser
 from src.domain.comment import Comment
-from src.domain.comment_reaction import CommentReaction, AllowedReactionType
+from src.domain.comment_reaction import CommentReaction
+from src.domain.enums.enums import AllowedReactionType
 from src.exceptions.exceptions import DefaultNotFoundException
 from src.repositories.comment_reaction_repository import CommentReactionRepository
 from src.services.comment_service import CommentService

@@ -21,5 +21,4 @@ class Settings(BaseSettings):
     PASSWORD_SALT_LENGTH: int
 
 
-
 app_settings = Settings()

@@ -4,18 +4,13 @@ from typing import List, Any, Type
 from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.domain.app_user import AppUser
-from src.domain.comment import Comment
-from src.domain.comment_reaction import CommentReaction
-from src.domain.post import Post
-from src.domain.tag import Tag
-from src.domain.user_post_view import UserPostView
+from src.domain.abstract.base_entity import BaseEntity
 from src.repositories.abstract.abstract_repository import AbstractRepository
 from src.utils.paginator import Paginator
 from src.utils.time_interval import TimeInterval
 
 
-class DefaultRepository[T:(AppUser, Tag, Post, Comment, CommentReaction, UserPostView)](AbstractRepository, ABC):
+class DefaultRepository[T:BaseEntity](AbstractRepository, ABC):
     entity_type = Type[T]
 
     async def find_all_with_filters_and_interval(
@@ -67,9 +62,7 @@ class DefaultRepository[T:(AppUser, Tag, Post, Comment, CommentReaction, UserPos
         return list(res.scalars().all())
 
     async def find_one_by_id(
-            self,
-            session: AsyncSession,
-            entity_id: int) -> T | None:
+            self, session: AsyncSession, entity_id: int) -> T | None:
         stmt = (
             select(self.entity_type)
             .filter(self.entity_type.id == entity_id)

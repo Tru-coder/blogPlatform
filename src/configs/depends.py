@@ -30,8 +30,6 @@ user_post_view_service = UserPostViewService(
     entity_repository=UserPostViewRepository()
 )
 
-
-
 auth_service = AuthService(
     user_repository=UserRepository()
 )
@@ -56,6 +54,7 @@ comment_reaction_service = CommentReactionService(
     comment_service=comment_service
 )
 
+
 def get_tag_service() -> TagService:
     return tag_service
 
@@ -67,17 +66,22 @@ def get_user_service() -> UserService:
 def get_post_service() -> PostService:
     return post_service
 
+
 def get_auth_service() -> AuthService:
     return auth_service
+
 
 def get_comment_service() -> CommentService:
     return comment_service
 
+
 def get_comment_reaction_service() -> CommentReactionService:
     return comment_reaction_service
 
+
 def get_user_post_view_service() -> UserPostViewService:
     return user_post_view_service
+
 
 TagServiceDep = Annotated[TagService, Depends(get_tag_service)]
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]
