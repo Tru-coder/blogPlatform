@@ -111,7 +111,7 @@ class CommentRepository(DefaultRepository[Comment]):
             .filter_by(**filters)
             .select_from(self.entity_type)
         )
-        return await session.scalar(stmt)
+        return await session.scalar(stmt) or 0
 
     async def find_to_moderate_comments(self, session: AsyncSession, paginator:Paginator) -> List[Comment]:
         stmt = (

@@ -60,7 +60,7 @@ class PostRepository(DefaultRepository[Post]):
             .filter(self.entity_type.created_at.between(time_interval.start, time_interval.end))
             .select_from(self.entity_type)
         )
-        return await session.scalar(stmt)
+        return await session.scalar(stmt) or 0
 
     def _build_published_posts_filters(
             self,
@@ -131,4 +131,4 @@ class PostRepository(DefaultRepository[Post]):
             .filter_by(**filters)
             .select_from(self.entity_type)
         )
-        return await session.scalar(stmt)
+        return await session.scalar(stmt) or 0

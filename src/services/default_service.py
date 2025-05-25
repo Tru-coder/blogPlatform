@@ -43,7 +43,7 @@ class DefaultService[T_EntityClass:
                      )](ABC):
     entity_not_found_exception = DefaultNotFoundException
 
-    def __init__(self, entity_repository: T_EntityRepository):
+    def __init__(self, entity_repository: T_EntityRepository) -> None:
         self.entity_repository = entity_repository
 
     @SessionManager.generate_async_transaction(session_kwarg_name="session")

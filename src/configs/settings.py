@@ -20,5 +20,5 @@ class Settings(BaseSettings):
     PASSWORD_HASH_LENGTH: int
     PASSWORD_SALT_LENGTH: int
 
-
-app_settings = Settings()
+# we will load values from environment variables at runtime
+app_settings = Settings()  # type: ignore[call-arg]

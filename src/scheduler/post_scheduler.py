@@ -24,7 +24,7 @@ class ContextDict(TypedDict):
     user_post_view_service: UserPostViewService
 
 
-async def startup(ctx: ContextDict):
+async def startup(ctx):
     user_post_view_service = UserPostViewService(entity_repository=UserPostViewRepository())
     post_service = PostService(
         entity_repository=PostRepository(),
@@ -41,16 +41,16 @@ async def startup(ctx: ContextDict):
     ctx['user_post_view_service'] = user_post_view_service
 
 
-async def shutdown(ctx: ContextDict):
+async def shutdown(ctx):
     await ctx['redis_client'].disconnect()
 
 
-async def publish_postponed_posts(ctx: ContextDict):
+async def publish_postponed_posts(ctx):
     published_posts = await ctx['post_service'].publish_postpone_posts()
     AppLogger.custom_logger.info(f'Опубликованные посты={published_posts}')
 
 
-async def update_post_views_count(ctx: ContextDict):
+async def update_post_views_count(ctx):
     await ctx['user_post_view_service'].update_views_count_on_posts()
     AppLogger.custom_logger.info(f'Обновляю счётчики-количества просмотров постов')
 

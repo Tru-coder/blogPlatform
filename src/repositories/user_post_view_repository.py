@@ -50,7 +50,7 @@ class UserPostViewRepository(DefaultRepository[UserPostView]):
             .filter_by(**filters)
             .select_from(self.entity_type)
         )
-        return await session.scalar(stmt)
+        return await session.scalar(stmt) or 0
 
     async def find_all_viewed_posts(self, session: AsyncSession, user_id: int, paginator: Paginator) -> List[Post]:
         stmt = (

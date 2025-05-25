@@ -35,9 +35,6 @@ class BaseEntity(Base):
         nullable=True
     )
 
-    # Define metadata attribute
-    __table_args__ = {"extend_existing": True}
-
     def __repr__(self) -> str:
         return "<{0.__class__.__name__}(id={0.id!r})>".format(self)
 

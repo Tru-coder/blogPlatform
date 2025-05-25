@@ -32,4 +32,4 @@ class CommentReactionRepository(DefaultRepository[CommentReaction]):
             .filter_by(**filters)
             .select_from(self.entity_type)
         )
-        return await session.scalar(stmt)
+        return await session.scalar(stmt) or 0

@@ -7,9 +7,9 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 from src.database.app_database import AppDatabase
 from src.logger.app_logger import AppLogger
 
-F_Spec = ParamSpec("F_Spec")
-F_Return = TypeVar("F_Return")
-F = Callable[F_Spec, Coroutine[Any, Any, F_Return]]
+
+P = ParamSpec("P")
+R = TypeVar("R")
 
 class SessionManager:
     async_session_maker = async_sessionmaker(
@@ -21,9 +21,9 @@ class SessionManager:
 
     @classmethod
     def generate_async_transaction(cls, session_kwarg_name: str = "session"):
-        def transactional(func: F) -> F:
+        def transactional(func: Callable[P, Coroutine[Any, Any, R]]) -> Callable[P, Coroutine[Any, Any, R]]:
             @wraps(func)
-            async def wrapper(*args: F_Spec, **kwargs: F_Spec) -> F_Return:
+            async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                 if kwargs.get(session_kwarg_name) is not None:
                     return await func(*args, **kwargs)
 

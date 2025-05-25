@@ -1,12 +1,37 @@
 import enum
-import inspect
 import logging
 import sys
 import time
 from functools import wraps
-from typing import Callable, ParamSpec, TypeVar
+from inspect import iscoroutinefunction
+from typing import Awaitable, Callable, Protocol, overload
+
+from typing_extensions import TypeIs
 
 from src.logger.custom_formatter import CustomFormatter
+
+
+def is_coroutine[**P, R](
+        func: Callable[P, R | Awaitable[R]],
+) -> TypeIs[Callable[P, Awaitable[R]]]:
+    return iscoroutinefunction(func)
+
+
+class SyncOrAsync(Protocol):
+    @overload
+    def __call__[**P, R](
+            self, _func: Callable[P, Awaitable[R]]
+    ) -> Callable[P, Awaitable[R]]:
+        ...
+
+    @overload
+    def __call__[**P, R](self, _func: Callable[P, R]) -> Callable[P, R]:
+        ...
+
+    def __call__[**P, R](
+            self, _func: Callable[P, Awaitable[R]] | Callable[P, R]
+    ) -> Callable[P, Awaitable[R]] | Callable[P, R]:
+        ...
 
 
 @enum.unique
@@ -17,10 +42,6 @@ class LogLevel(enum.Enum):
     ERROR = 'ERROR'
     EXCEPTION = 'EXCEPTION'
     CRITICAL = 'CRITICAL'
-
-
-F_Spec = ParamSpec("F_Spec")
-F_Return = TypeVar("F_Return")
 
 
 class AppLogger:
@@ -43,65 +64,95 @@ class AppLogger:
     custom_logger.critical("Logger class initialized")
 
     @classmethod
-    def log(cls, log_level: LogLevel = LogLevel.DEBUG):
-        """Log decorator"""
+    def log(cls, log_level: LogLevel = LogLevel.DEBUG) -> SyncOrAsync:
+        @overload
+        def decorator[**P, R](
+                _func: Callable[P, Awaitable[R]],
+        ) -> Callable[P, Awaitable[R]]:
+            ...
 
-        def real_log(func: Callable[F_Spec, F_Return]) -> Callable[F_Spec, F_Return]:
-            """Log function"""
+        @overload
+        def decorator[**P, R](
+                _func: Callable[P, R],
+        ) -> Callable[P, R]:
+            ...
 
-            @wraps(func)
-            async def async_trace(*args: F_Spec, **kwargs: F_Spec) -> F_Return:
-                """Async wrapper"""
-                cls.log_level_call[log_level](f"Calling {func.__name__}({args}, {kwargs}) "
-                                              f"with {args}, {kwargs}")
+        def decorator[**P, R](
+                _func: Callable[P, Awaitable[R]] | Callable[P, R],
+        ) -> Callable[P, Awaitable[R]] | Callable[P, R]:
+            if is_coroutine(_func):
+                _awaitable_func = _func
 
-                original_result = await func(*args, **kwargs)
+                @wraps(_awaitable_func)
+                async def _async_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+                    cls.log_level_call[log_level](f"Calling {_awaitable_func.__name__}({args}, {kwargs}) "
+                                                  f"with {args}, {kwargs}")
+                    res = await _awaitable_func(*args, **kwargs)
 
-                cls.log_level_call[log_level](f"Function: {func.__name__}({args}, {kwargs}) "
-                                              f"returned {original_result}")
+                    cls.log_level_call[log_level](f"Function: {_awaitable_func.__name__}({args}, {kwargs}) "
+                                                  f"returned {res}")
 
-                return original_result
+                    return res
 
-            @wraps(func)
-            def sync_trace(*args: F_Spec, **kwargs: F_Spec) -> F_Return:
-                """Sync wrapper"""
-                cls.log_level_call[log_level](f"Calling {func.__name__}({args}, {kwargs}) "
-                                              f"with {args}, {kwargs}")
+                return _async_wrapper
 
-                original_result = func(*args, **kwargs)
 
-                cls.log_level_call[log_level](f"Function: {func.__name__}({args}, {kwargs}) "
-                                              f"returned {original_result}")
+            else:
+                @wraps(_func)
+                def _sync_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+                    cls.log_level_call[log_level](f"Calling {_func.__name__}({args}, {kwargs}) "
+                                                  f"with {args}, {kwargs}")
+                    res = _func(*args, **kwargs)
 
-                return original_result
+                    cls.log_level_call[log_level](f"Function: {_func.__name__}({args}, {kwargs}) "
+                                                  f"returned {res}")
+                    return res
 
-            return async_trace if inspect.iscoroutinefunction(func) else sync_trace
+                return _sync_wrapper
 
-        return real_log
+        return decorator
 
     @classmethod
-    def measure_execution(cls, log_level: LogLevel):
-        def real_measure(func: Callable[F_Spec, F_Return]) -> Callable[F_Spec, F_Return]:
-            @wraps(func)
-            async def async_measure(*args: F_Spec, **kwargs: F_Spec) -> F_Return:
-                start_time = time.time()
-                original_result = await func(*args, **kwargs)
+    def measure_execution(cls, log_level: LogLevel = LogLevel.DEBUG) -> SyncOrAsync:
+        @overload
+        def decorator[**P, R](
+                _func: Callable[P, Awaitable[R]],
+        ) -> Callable[P, Awaitable[R]]:
+            ...
 
-                cls.log_level_call[log_level](
-                    f"Время выполнения '{func.__name__}' is '{time.time() - start_time}'")
+        @overload
+        def decorator[**P, R](
+                _func: Callable[P, R],
+        ) -> Callable[P, R]:
+            ...
 
-                return original_result
+        def decorator[**P, R](
+                _func: Callable[P, Awaitable[R]] | Callable[P, R],
+        ) -> Callable[P, Awaitable[R]] | Callable[P, R]:
+            if is_coroutine(_func):
+                _awaitable_func = _func
 
-            @wraps(func)
-            def sync_measure(*args: F_Spec, **kwargs: F_Spec) -> F_Return:
-                start_time = time.time()
-                original_result = func(*args, **kwargs)
+                @wraps(_awaitable_func)
+                async def _async_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+                    start_time = time.time()
+                    res = await _awaitable_func(*args, **kwargs)
+                    cls.log_level_call[log_level](
+                        f"Время выполнения '{_awaitable_func.__name__}' is '{time.time() - start_time}'"
+                    )
+                    return res
 
-                cls.log_level_call[log_level](
-                    f"Время выполнения'{func.__name__}' is '{time.time() - start_time}'")
+                return _async_wrapper
 
-                return original_result
+            else:
+                @wraps(_func)
+                def _sync_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+                    start_time = time.time()
+                    res = _func(*args, **kwargs)
+                    cls.log_level_call[log_level](
+                        f"Время выполнения '{_func.__name__}' is '{time.time() - start_time}'"
+                    )
+                    return res
 
-            return async_measure if inspect.iscoroutinefunction(func) else sync_measure
+                return _sync_wrapper
 
-        return real_measure
+        return decorator

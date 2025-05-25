@@ -1,6 +1,6 @@
 import json
 from functools import wraps
-from typing import Any, Callable, TypeVar, ParamSpec, List
+from typing import Any, Callable, TypeVar, ParamSpec, List, Awaitable, cast
 
 import redis.asyncio as redis
 from arq.connections import RedisSettings
@@ -10,9 +10,8 @@ from src.domain.post import Post
 from src.logger.app_logger import AppLogger
 from src.utils.custom_json_encoder import CustomJSONEncoder
 
-F_Spec = ParamSpec("F_Spec")
-F_Return = TypeVar("F_Return")
-
+P = ParamSpec("P")
+R = TypeVar("R", bound=List[Post])
 
 class RedisTools:
     __redis_client = redis.Redis(
@@ -25,10 +24,10 @@ class RedisTools:
         f"Redis инициализирован хост={app_settings.REDIS_HOST} и порт={app_settings.REDIS_PORT}")
 
     @classmethod
-    def cache_find_published_posts(cls, ex: int = 60, session_kwarg_name: str = "session"):
-        def decorator(func: Callable[F_Spec, F_Return]) -> Callable[F_Spec, F_Return]:
+    def cache_find_published_posts(cls, ex: int = 60, session_kwarg_name: str = "session") -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]:
+        def decorator(func: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:
             @wraps(func)
-            async def wrapper(*args: F_Spec, **kwargs: F_Spec) -> F_Return:
+            async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                 key_parts = [
                     getattr(func, "__module__", ""),
                     getattr(func, "__qualname__", "")
@@ -49,13 +48,13 @@ class RedisTools:
                 if cached is not None:
                     AppLogger.custom_logger.info(f"Redis cache hit: {cache_key}")
                     data = json.loads(cached)
-                    return [Post(**item) for item in data]
+                    return cast(R, [Post(**item) for item in data])
 
                 result: List[Post] = await func(*args, **kwargs)
                 json_result = json.dumps([obj.to_dict() for obj in result], cls=CustomJSONEncoder)
                 await cls.set_key(cache_key, json_result, ex_in_sec=ex)
                 AppLogger.custom_logger.info(f"Redis cache set: {cache_key}, value={json_result}")
-                return result
+                return cast(R, result)
 
             return wrapper
 

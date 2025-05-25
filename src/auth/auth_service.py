@@ -70,6 +70,7 @@ class AuthService:
         return wrapper
 
     @staticmethod
+    @AppLogger.log()
     async def generate_user_tokens(user: AppUser) -> UserTokens:
 
         access_token_payload: dict[str, Any] = {"sub": user.login}

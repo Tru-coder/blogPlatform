@@ -80,7 +80,7 @@ class PostService(DefaultService[Post, PostRepository]):
             self, session: AsyncSession, paginator: Paginator, time_interval: TimeInterval,
             filters: PostFiltersUsersParams
     ) -> Tuple[List[Post], int]:
-        filters['tags'] = filters['tags'] if filters['tags'] else []
+        tag_names = filters['tags'] if filters['tags'] is not None else []
 
         post_filters = PostFiltersParams(
             author_id=(
@@ -88,7 +88,7 @@ class PostService(DefaultService[Post, PostRepository]):
             filters["author_uuid"] is not None else None,
             category=filters["category"],
             content=filters["content"],
-            tags=[(await self.tag_service.get_tag_by_name(session=session, name=i)).id for i in filters["tags"]]
+            tags=[(await self.tag_service.get_tag_by_name(session=session, name=tag_name)).id for tag_name in tag_names ]
         )
         return (
             await self.entity_repository.find_published_posts(
@@ -160,7 +160,7 @@ class PostService(DefaultService[Post, PostRepository]):
     @SessionManager.generate_async_transaction(session_kwarg_name="session")
     async def get_my_posts(
             self, session: AsyncSession, current_user: AppUser, paginator: Paginator
-    ) -> [List[Post], int]:
+    ) -> Tuple[List[Post], int]:
 
         posts = await self.entity_repository.find_all_with_filters(
             session=session,

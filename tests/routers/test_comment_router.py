@@ -1,3 +1,6 @@
+from typing import AsyncGenerator
+from uuid import UUID
+
 import pytest
 from fastapi import status
 from httpx import AsyncClient
@@ -29,7 +32,7 @@ async def test_get_to_moderate_comments_anonym(anonym_client: AsyncClient):
 
 
 @pytest.fixture
-async def published_post(author_client, mock_post_service):
+async def published_post(author_client, mock_post_service) -> AsyncGenerator[dict[str, str], None]:
     post_data = CreatePostSchema(
         title="Published Post",
         content="Published content",
@@ -71,7 +74,7 @@ async def draft_post(author_client, mock_post_service):
 @pytest.mark.anyio
 async def test_create_comment_on_published_post(author_client: AsyncClient, published_post: dict[str, str], mock_comment_service: CommentService):
     comment_data = CreateCommentSchema(
-        post_uuid=published_post["uuid"],
+        post_uuid=UUID(published_post["uuid"]),
         parent_comment_uuid=None,
         content="Comment on published post"
     )
@@ -88,7 +91,7 @@ async def test_create_comment_on_published_post(author_client: AsyncClient, publ
 @pytest.mark.anyio
 async def test_create_comment_on_draft_post_forbidden(author_client: AsyncClient, draft_post: dict[str, str]):
     comment_data = CreateCommentSchema(
-        post_uuid=draft_post["uuid"],
+        post_uuid=UUID(draft_post["uuid"]),
         parent_comment_uuid=None,
         content="Should not be allowed"
     )
@@ -103,7 +106,7 @@ async def test_create_comment_on_draft_post_forbidden(author_client: AsyncClient
 async def test_create_nested_comment_on_published_post(author_client: AsyncClient, published_post: dict[str, str], mock_comment_service: CommentService):
     # Сначала создаём родительский комментарий
     parent_comment_data = CreateCommentSchema(
-        post_uuid=published_post["uuid"],
+        post_uuid=UUID(published_post["uuid"]),
         parent_comment_uuid=None,
         content="Parent comment"
     )
@@ -116,7 +119,7 @@ async def test_create_nested_comment_on_published_post(author_client: AsyncClien
 
     # Теперь создаём вложенный комментарий
     nested_comment_data = CreateCommentSchema(
-        post_uuid=published_post["uuid"],
+        post_uuid=UUID(published_post["uuid"]),
         parent_comment_uuid=parent_comment["uuid"],
         content="Nested comment"
     )

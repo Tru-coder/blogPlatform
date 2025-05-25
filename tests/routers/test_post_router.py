@@ -12,7 +12,7 @@ from src.services.tag_service import TagService
 
 
 @pytest.fixture(scope="function")
-async def existing_tag(admin_client: AsyncClient, mock_tag_service: TagService) -> dict[str, str]:
+async def existing_tag(admin_client: AsyncClient, mock_tag_service: TagService) -> AsyncGenerator[dict[str, str], None]:
     tag_data = CreateTagSchema(name="test-tag")
     response = await admin_client.post(
         "/tags/",

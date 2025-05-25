@@ -67,6 +67,7 @@ class JWTService:
 
 
     @classmethod
+    @AppLogger.measure_execution()
     def encode_jwt(cls, payload: dict[str, Any]) -> str:
         payload["nbf"] = datetime.now(tz=timezone.utc)
         payload["iss"] = cls.issuer

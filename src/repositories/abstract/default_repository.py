@@ -1,18 +1,19 @@
 from abc import ABC
-from typing import List, Any, Type, TypeVar, Generic
+from typing import List, Any, Type, TypeVar, Generic, ClassVar
 
 from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.domain.abstract.base_entity import BaseEntity
 from src.repositories.abstract.abstract_repository import AbstractRepository
 from src.utils.paginator import Paginator
 from src.utils.time_interval import TimeInterval
 
-T = TypeVar('T', bound='BaseEntity')
+T = TypeVar('T', bound=BaseEntity)
 
 
 class DefaultRepository(AbstractRepository, ABC, Generic[T]):
-    entity_type = Type[T]
+    entity_type: ClassVar
 
     async def find_all_with_filters_and_interval(
             self,
@@ -135,4 +136,4 @@ class DefaultRepository(AbstractRepository, ABC, Generic[T]):
             .filter_by(**filters)
             .select_from(self.entity_type)
         )
-        return await session.scalar(stmt)
+        return await session.scalar(stmt) or 0
